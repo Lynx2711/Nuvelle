@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Skill Categories{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Skill Categories</h1>
+    <p class="text-muted small mb-0">High-level grouping for taxonomies, profiles, and placement benchmarks.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'skills:skill_list' %}" class="btn btn-outline-secondary btn-sm">&larr; Back to Skills</a>
+    {% if can_edit %}
+      <a href="{% url 'skills:category_create' %}" class="btn btn-primary btn-sm">+ Add Category</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light small">
+        <tr>
+          <th>Category Name</th>
+          <th>Description</th>
+          <th>Skills Count</th>
+          {% if can_edit %}<th class="text-end">Actions</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for cat in categories %}
+          <tr>
+            <td class="fw-semibold">{{ cat.name }}</td>
+            <td class="text-muted small">{{ cat.description|default:"—" }}</td>
+            <td>
+              <a href="{% url 'skills:skill_list' %}?category={{ cat.pk }}" class="badge bg-light text-primary border text-decoration-none">
+                {{ cat.skill_count }} skills
+              </a>
+            </td>
+            {% if can_edit %}
+              <td class="text-end">
+                <a href="{% url 'skills:category_edit' cat.pk %}" class="btn btn-outline-secondary btn-sm py-0 px-2">Edit</a>
+              </td>
+            {% endif %}
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="{% if can_edit %}4{% else %}3{% endif %}" class="text-center py-4 text-muted">
+              No skill categories defined yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

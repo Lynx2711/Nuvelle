@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Nuvelle - Skill Mapping, Internships and Placements Platform">
+  <title>{% block title %}Nuvelle{% endblock %} | Skill & Placement Portal</title>
+
+  <!-- Vendor Assets -->
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
+  <!-- Nuvelle Custom CSS -->
+  <link rel="stylesheet" href="{% static 'css/nuvelle.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <!-- Navigation bar -->
+  {% include 'includes/navbar.html' %}
+
+  <!-- Flash Messages -->
+  <div class="container mt-3">
+    {% include 'includes/messages.html' %}
+  </div>
+
+  <!-- Main content area -->
+  <main class="container my-4">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  {% include 'includes/footer.html' %}
+
+  <!-- Scripts -->
+  <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'vendor/htmx/htmx.min.js' %}"></script>
+  <script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

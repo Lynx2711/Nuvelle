@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile & Skills{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Profile Completeness Bar & Academic Details -->
+  <div class="col-lg-4">
+    <!-- Completeness Card -->
+    <div class="card shadow-sm mb-4 border-0">
+      <div class="card-body p-4">
+        <h2 class="h6 fw-bold text-uppercase text-muted mb-2">Profile Completeness</h2>
+        <div class="d-flex align-items-baseline justify-content-between mb-2">
+          <span class="display-6 fw-bold text-primary">{{ completeness }}%</span>
+          <span class="small text-muted">
+            {% if completeness == 100 %}Complete!{% else %}Complete all sections{% endif %}
+          </span>
+        </div>
+        <div class="progress mb-3" style="height: 10px;" role="progressbar" aria-valuenow="{{ completeness }}" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-bar bg-success" style="width: {{ completeness }}%;"></div>
+        </div>
+
+        <ul class="list-unstyled small mb-0 text-muted">
+          <li class="mb-1">
+            {% if profile.roll_no and profile.programme and profile.cgpa %}<span class="text-success">&check;</span>{% else %}<span class="text-secondary">&bull;</span>{% endif %}
+            Academic Details & CGPA
+          </li>
+          <li class="mb-1">
+            {% if profile.resume_file %}<span class="text-success">&check;</span>{% else %}<span class="text-secondary">&bull;</span>{% endif %}
+            Resume Uploaded (PDF &le; 2 MB)
+          </li>
+          <li class="mb-1">
+            {% if skills %}<span class="text-success">&check;</span>{% else %}<span class="text-secondary">&bull;</span>{% endif %}
+            At least 1 Self-Assessed Skill
+          </li>
+          <li>
+            {% if projects or certifications %}<span class="text-success">&check;</span>{% else %}<span class="text-secondary">&bull;</span>{% endif %}
+            Project or Certification
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Academic Information Form -->
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white py-3">
+        <h2 class="h6 fw-bold mb-0">Academic Details & Resume</h2>
+      </div>
+      <div class="card-body p-4">
+        <div class="mb-3 small text-muted">
+          <div><strong>Institution:</strong> {{ profile.institution.name }}</div>
+          <div><strong>Roll Number:</strong> <span class="font-monospace fw-bold">{{ profile.roll_no }}</span></div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="id_programme" class="form-label">Degree / Programme *</label>
+            {{ form.programme }}
+            {% if form.programme.errors %}<div class="text-danger small mt-1">{{ form.programme.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label for="id_batch" class="form-label">Batch (e.g. 2026) *</label>
+            {{ form.batch }}
+            {% if form.batch.errors %}<div class="text-danger small mt-1">{{ form.batch.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label for="id_graduation_year" class="form-label">Graduation Year</label>
+            {{ form.graduation_year }}
+            {% if form.graduation_year.errors %}<div class="text-danger small mt-1">{{ form.graduation_year.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label for="id_cgpa" class="form-label">CGPA (0.00 - 10.00)</label>
+            {{ form.cgpa }}
+            <div class="form-text">{{ form.cgpa.help_text }}</div>
+            {% if form.cgpa.errors %}<div class="text-danger small mt-1">{{ form.cgpa.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="mb-4">
+            <label for="id_resume_file" class="form-label">Resume PDF (Max 2 MB)</label>
+            {{ form.resume_file }}
+            <div class="form-text">{{ form.resume_file.help_text }}</div>
+            {% if profile.resume_file %}
+              <div class="mt-2 small">
+                <a href="{{ profile.resume_file.url }}" target="_blank" rel="noopener" class="text-primary text-decoration-none">&darr; View Current Resume</a>
+              </div>
+            {% endif %}
+            {% if form.resume_file.errors %}<div class="text-danger small mt-1">{{ form.resume_file.errors.0 }}</div>{% endif %}
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-sm w-100">Save Academic Details</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skills, Projects & Certifications -->
+  <div class="col-lg-8">
+    <!-- Skills Matrix Section -->
+    <div class="card shadow-sm mb-4 border-0">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="h5 fw-bold mb-0">Self-Assessed Skills</h2>
+          <span class="small text-muted">Rated 1 (Beginner) to 4 (Expert). Faculty review verifies claims.</span>
+        </div>
+        <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#addSkillCollapse" aria-expanded="false">
+          + Add Skill
+        </button>
+      </div>
+
+      <!-- Add Skill Collapse -->
+      <div class="collapse p-3 bg-light border-bottom" id="addSkillCollapse">
+        <form action="{% url 'profiles:skill_add' %}" method="post" class="row g-2 align-items-end" novalidate>
+          {% csrf_token %}
+          <div class="col-md-6">
+            <label for="id_skill" class="form-label small fw-bold">Select Skill *</label>
+            {{ skill_form.skill }}
+          </div>
+          <div class="col-md-4">
+            <label for="id_level" class="form-label small fw-bold">Your Proficiency Level *</label>
+            {{ skill_form.level }}
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-success btn-sm w-100">Add Skill</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small">
+              <tr>
+                <th>Skill</th>
+                <th>Category</th>
+                <th>Self-Assessed Level</th>
+                <th>Verification Status</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in skills %}
+                <tr>
+                  <td class="fw-semibold">{{ s.skill.name }}</td>
+                  <td><span class="badge bg-light text-secondary border">{{ s.skill.category.name }}</span></td>
+                  <td>
+                    <!-- Inline level adjuster -->
+                    <form action="{% url 'profiles:skill_edit' s.pk %}" method="post" class="d-inline-flex align-items-center">
+                      {% csrf_token %}
+                      <select name="level" class="form-select form-select-sm py-0 px-2" style="width: auto;" onchange="this.form.submit()" aria-label="Change level for {{ s.skill.name }}">
+                        <option value="1" {% if s.level == 1 %}selected{% endif %}>Level 1: Beginner</option>
+                        <option value="2" {% if s.level == 2 %}selected{% endif %}>Level 2: Intermediate</option>
+                        <option value="3" {% if s.level == 3 %}selected{% endif %}>Level 3: Advanced</option>
+                        <option value="4" {% if s.level == 4 %}selected{% endif %}>Level 4: Expert</option>
+                      </select>
+                    </form>
+                  </td>
+                  <td>
+                    {% if s.status == 'verified' %}
+                      <span class="badge bg-success-subtle text-success border border-success-subtle" title="Verified by {{ s.verified_by.get_full_name|default:s.verified_by.email }}">
+                        &check; Verified
+                      </span>
+                    {% elif s.status == 'rejected' %}
+                      <span class="badge bg-danger-subtle text-danger border border-danger-subtle" title="{{ s.rejection_reason }}">
+                        &cross; Rejected
+                      </span>
+                      <div class="small text-danger fst-italic mt-1">{{ s.rejection_reason }}</div>
+                    {% else %}
+                      <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                        &bull; Pending Review
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <form action="{% url 'profiles:skill_delete' s.pk %}" method="post" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="return confirm('Remove {{ s.skill.name }} from profile?');" aria-label="Delete {{ s.skill.name }}">
+                        &times;
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center py-4 text-muted">
+                    No skills added yet. Click "+ Add Skill" above to start building your skill profile.
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projects Section -->
+    <div class="card shadow-sm mb-4 border-0">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h2 class="h5 fw-bold mb-0">Projects ({{ projects|length }})</h2>
+        <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#addProjectCollapse">
+          + Add Project
+        </button>
+      </div>
+
+      <div class="collapse p-3 bg-light border-bottom" id="addProjectCollapse">
+        <form action="{% url 'profiles:project_add' %}" method="post" novalidate>
+          {% csrf_token %}
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Project Title *</label>
+            {{ project_form.title }}
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Description *</label>
+            {{ project_form.description }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Project URL (GitHub / Demo)</label>
+            {{ project_form.link }}
+          </div>
+          <button type="submit" class="btn btn-success btn-sm">Add Project</button>
+        </form>
+      </div>
+
+      <div class="card-body">
+        {% for p in projects %}
+          <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+            <div>
+              <h3 class="h6 fw-bold mb-1">
+                {{ p.title }}
+                {% if p.link %}
+                  <a href="{{ p.link }}" target="_blank" rel="noopener" class="small ms-1 text-decoration-none">&nearr; Link</a>
+                {% endif %}
+              </h3>
+              <p class="small text-muted mb-0">{{ p.description }}</p>
+            </div>
+            <form action="{% url 'profiles:project_delete' p.pk %}" method="post">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="return confirm('Delete project?');">&times;</button>
+            </form>
+          </div>
+        {% empty %}
+          <p class="text-muted small text-center mb-0 py-2">No projects documented yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Certifications Section -->
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h2 class="h5 fw-bold mb-0">Certifications ({{ certifications|length }})</h2>
+        <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#addCertCollapse">
+          + Add Certification
+        </button>
+      </div>
+
+      <div class="collapse p-3 bg-light border-bottom" id="addCertCollapse">
+        <form action="{% url 'profiles:certification_add' %}" method="post" novalidate>
+          {% csrf_token %}
+          <div class="row g-2 mb-2">
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Certification Name *</label>
+              {{ cert_form.name }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Issuer *</label>
+              {{ cert_form.issuer }}
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Issued Date</label>
+              {{ cert_form.issued_on }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Credential URL</label>
+              {{ cert_form.credential_url }}
+            </div>
+          </div>
+          <button type="submit" class="btn btn-success btn-sm">Add Certification</button>
+        </form>
+      </div>
+
+      <div class="card-body">
+        {% for c in certifications %}
+          <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+            <div>
+              <h3 class="h6 fw-bold mb-1">
+                {{ c.name }}
+                {% if c.credential_url %}
+                  <a href="{{ c.credential_url }}" target="_blank" rel="noopener" class="small ms-1 text-decoration-none">&nearr; Verify</a>
+                {% endif %}
+              </h3>
+              <div class="small text-muted">
+                Issued by <strong>{{ c.issuer }}</strong>
+                {% if c.issued_on %}&bull; {{ c.issued_on|date:"M Y" }}{% endif %}
+              </div>
+            </div>
+            <form action="{% url 'profiles:certification_delete' c.pk %}" method="post">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="return confirm('Delete certification?');">&times;</button>
+            </form>
+          </div>
+        {% empty %}
+          <p class="text-muted small text-center mb-0 py-2">No certifications documented yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

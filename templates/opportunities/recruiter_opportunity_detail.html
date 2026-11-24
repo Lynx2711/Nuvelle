@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage: {{ opportunity.title }}{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'opportunities:recruiter_list' %}" class="small text-decoration-none">&larr; Back to My Opportunities</a>
+</div>
+
+<div class="row g-4">
+  <!-- Left Side: Opportunity Overview & Status Control -->
+  <div class="col-lg-8">
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="h5 fw-bold mb-0">{{ opportunity.title }}</h1>
+          <span class="small text-muted">{{ opportunity.company.name }} &bull; {{ opportunity.location }}</span>
+        </div>
+        <div>
+          {% if opportunity.status == 'published' %}
+            <span class="badge bg-success-subtle text-success border border-success-subtle">&check; Published</span>
+          {% elif opportunity.status == 'closed' %}
+            <span class="badge bg-secondary-subtle text-secondary border">Closed</span>
+          {% else %}
+            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Draft</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card-body p-4">
+        <!-- Status Action Toolbar -->
+        <div class="p-3 bg-light rounded mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <div class="fw-bold small">Current Status: <span class="text-uppercase">{{ opportunity.get_status_display }}</span></div>
+            <div class="small text-muted">Deadline: {{ opportunity.deadline|date:"d M Y, H:i" }} (Asia/Kolkata)</div>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="{% url 'opportunities:opportunity_edit' opportunity.pk %}" class="btn btn-outline-secondary btn-sm">Edit Details</a>
+
+            {% if opportunity.status != 'published' %}
+              <form action="{% url 'opportunities:opportunity_publish' opportunity.pk %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm" {% if not is_company_approved %}disabled title="Company must be approved by admin"{% endif %}>
+                  &check; Publish Opportunity
+                </button>
+              </form>
+            {% else %}
+              <form action="{% url 'opportunities:opportunity_close' opportunity.pk %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Close this opportunity? Students will no longer be able to apply.');">
+                  Close Opportunity
+                </button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if not is_company_approved %}
+          <div class="alert alert-warning small mb-4">
+            <strong>Publishing Locked:</strong> Your company is pending admin approval. You can configure required skills now, and publish as soon as an admin approves your company.
+          </div>
+        {% endif %}
+
+        <!-- Required Skills Matrix -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="h6 fw-bold mb-0">Required Skills & Benchmark Weights ({{ required_skills|length }})</h2>
+          <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#addSkillCollapse">
+            + Add Skill Requirement
+          </button>
+        </div>
+
+        <!-- Add Skill Collapse -->
+        <div class="collapse p-3 bg-light rounded mb-3 border" id="addSkillCollapse">
+          <form action="{% url 'opportunities:skill_add' opportunity.pk %}" method="post" class="row g-2 align-items-end" novalidate>
+            {% csrf_token %}
+            <div class="col-md-5">
+              <label class="form-label small fw-bold">Select Skill *</label>
+              {{ skill_form.skill }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">Required Level *</label>
+              {{ skill_form.required_level }}
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small fw-bold">Weight (1-5) *</label>
+              {{ skill_form.weight }}
+            </div>
+            <div class="col-md-1">
+              <button type="submit" class="btn btn-success btn-sm w-100">Add</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small">
+              <tr>
+                <th>Skill</th>
+                <th>Category</th>
+                <th>Required Level</th>
+                <th>Weight (1-5)</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for req in required_skills %}
+                <tr>
+                  <td class="fw-semibold">{{ req.skill.name }}</td>
+                  <td><span class="badge bg-light text-secondary border">{{ req.skill.category.name }}</span></td>
+                  <td>
+                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                      Level {{ req.required_level }}: {{ req.get_required_level_display }}
+                    </span>
+                  </td>
+                  <td><span class="fw-bold">{{ req.weight }}</span> / 5</td>
+                  <td class="text-end">
+                    <form action="{% url 'opportunities:skill_delete' opportunity.pk req.pk %}" method="post" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="return confirm('Remove skill requirement?');">&times;</button>
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center py-4 text-muted">
+                    No skills required yet. Click "+ Add Skill Requirement" to set criteria for matching.
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Details & Eligibility Summary -->
+  <div class="col-lg-4">
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header bg-white py-3">
+        <h2 class="h6 fw-bold mb-0">Specifications</h2>
+      </div>
+      <div class="card-body p-4 small">
+        <div class="mb-2"><strong>Type:</strong> {{ opportunity.get_type_display }}</div>
+        <div class="mb-2"><strong>Mode:</strong> {{ opportunity.get_mode_display }} ({{ opportunity.location }})</div>
+        <div class="mb-2"><strong>Openings:</strong> {{ opportunity.openings }}</div>
+        <div class="mb-2">
+          <strong>Pay:</strong>
+          {% if opportunity.pay_min and opportunity.pay_max %}
+            &#8377;{{ opportunity.pay_min }} - &#8377;{{ opportunity.pay_max }}
+          {% else %}
+            Competitive
+          {% endif %}
+        </div>
+        <div class="mb-2"><strong>Min CGPA:</strong> {{ opportunity.min_cgpa|default:"None" }}</div>
+        <div class="mb-2"><strong>Programme:</strong> {{ opportunity.programme|default:"All programmes" }}</div>
+        <div class="mb-2"><strong>Batch:</strong> {{ opportunity.batch|default:"All batches" }}</div>
+
+        <div class="pt-3 border-top mt-3 d-grid gap-2">
+          <a href="{% url 'applications:applicant_list' opportunity.pk %}" class="btn btn-primary btn-sm">
+            View Applicants ({{ opportunity.applications.count }}) &rarr;
+          </a>
+          <a href="{% url 'opportunities:opportunity_detail' opportunity.pk %}" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">
+            Preview Student View &nearr;
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

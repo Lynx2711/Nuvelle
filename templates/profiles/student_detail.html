@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ student.user.get_full_name|default:student.user.email }} - Profile{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'profiles:student_list' %}" class="small text-decoration-none">&larr; Back to Student Batches</a>
+</div>
+
+<div class="row g-4">
+  <!-- Profile Summary Card -->
+  <div class="col-lg-4">
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-body p-4 text-center">
+        <h1 class="h4 fw-bold mb-1">{{ student.user.get_full_name|default:student.user.email }}</h1>
+        <p class="text-muted small mb-2">{{ student.user.email }}</p>
+        <span class="badge badge-role-student mb-3">Student</span>
+
+        <!-- Completeness meter -->
+        <div class="my-3 text-start">
+          <div class="d-flex justify-content-between small text-muted mb-1">
+            <span>Profile Completeness</span>
+            <span class="fw-bold">{{ completeness }}%</span>
+          </div>
+          <div class="progress" style="height: 6px;">
+            <div class="progress-bar bg-success" style="width: {{ completeness }}%;"></div>
+          </div>
+        </div>
+
+        <div class="text-start border-top pt-3 small">
+          <div class="mb-2"><strong>Institution:</strong> {{ student.institution.name }}</div>
+          <div class="mb-2"><strong>Roll Number:</strong> <span class="font-monospace fw-bold">{{ student.roll_no }}</span></div>
+          <div class="mb-2"><strong>Programme:</strong> {{ student.programme }}</div>
+          <div class="mb-2"><strong>Batch:</strong> {{ student.batch }}</div>
+          <div class="mb-2">
+            <strong>CGPA:</strong>
+            {% if student.cgpa %}
+              <span class="badge bg-primary-subtle text-primary border">{{ student.cgpa }} / 10.0</span>
+            {% else %}
+              <span class="text-muted">Not specified</span>
+            {% endif %}
+          </div>
+          {% if student.graduation_year %}
+            <div class="mb-2"><strong>Graduation Year:</strong> {{ student.graduation_year }}</div>
+          {% endif %}
+        </div>
+
+        {% if student.resume_file %}
+          <div class="d-grid mt-3">
+            <a href="{{ student.resume_file.url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
+              &darr; Download PDF Resume
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Skills, Projects & Certifications -->
+  <div class="col-lg-8">
+    <!-- Skills Card -->
+    <div class="card shadow-sm mb-4 border-0">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0 fw-bold">Skills Profile ({{ skills|length }})</h2>
+        <span class="badge bg-light text-dark border">Verified & Self-Assessed</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small">
+              <tr>
+                <th>Skill</th>
+                <th>Category</th>
+                <th>Proficiency Level</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in skills %}
+                <tr>
+                  <td class="fw-semibold">{{ s.skill.name }}</td>
+                  <td><span class="badge bg-light text-secondary border">{{ s.skill.category.name }}</span></td>
+                  <td>
+                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                      Level {{ s.level }}: {{ s.get_level_display }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if s.status == 'verified' %}
+                      <span class="badge bg-success-subtle text-success border border-success-subtle" title="Verified by {{ s.verified_by.get_full_name|default:s.verified_by.email }}">
+                        &check; Verified
+                      </span>
+                    {% elif s.status == 'rejected' %}
+                      <span class="badge bg-danger-subtle text-danger border border-danger-subtle" title="{{ s.rejection_reason }}">
+                        &cross; Rejected
+                      </span>
+                    {% else %}
+                      <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                        &bull; Pending Review
+                      </span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center py-4 text-muted">No skills added by student yet.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projects Card -->
+    <div class="card shadow-sm mb-4 border-0">
+      <div class="card-header bg-white py-3">
+        <h2 class="h5 mb-0 fw-bold">Projects ({{ projects|length }})</h2>
+      </div>
+      <div class="card-body">
+        {% for p in projects %}
+          <div class="border-bottom pb-2 mb-2">
+            <h3 class="h6 fw-bold mb-1">
+              {{ p.title }}
+              {% if p.link %}
+                <a href="{{ p.link }}" target="_blank" rel="noopener" class="small ms-1 text-decoration-none">&nearr; Link</a>
+              {% endif %}
+            </h3>
+            <p class="small text-muted mb-0">{{ p.description }}</p>
+          </div>
+        {% empty %}
+          <p class="text-muted small text-center mb-0">No projects listed.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Certifications Card -->
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white py-3">
+        <h2 class="h5 mb-0 fw-bold">Certifications ({{ certifications|length }})</h2>
+      </div>
+      <div class="card-body">
+        {% for c in certifications %}
+          <div class="border-bottom pb-2 mb-2">
+            <h3 class="h6 fw-bold mb-1">
+              {{ c.name }}
+              {% if c.credential_url %}
+                <a href="{{ c.credential_url }}" target="_blank" rel="noopener" class="small ms-1 text-decoration-none">&nearr; Verify</a>
+              {% endif %}
+            </h3>
+            <div class="small text-muted">
+              {{ c.issuer }} {% if c.issued_on %}&bull; {{ c.issued_on|date:"M Y" }}{% endif %}
+            </div>
+          </div>
+        {% empty %}
+          <p class="text-muted small text-center mb-0">No certifications listed.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

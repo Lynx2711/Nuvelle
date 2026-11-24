@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}500 Server Error{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+  <div class="col-md-8 col-lg-6 text-center">
+    <div class="card p-4 shadow-sm border-danger">
+      <h1 class="display-4 text-danger fw-bold">500</h1>
+      <h2 class="h4 mb-3">Internal Server Error</h2>
+      <p class="text-muted mb-4">{{ message|default:"Something went wrong on our end. Our engineering team has logged this incident." }}</p>
+      <div>
+        <a href="{% url 'home' %}" class="btn btn-primary">Back to Home</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,514 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ role_title }}{% endblock %}
+
+{% block content %}
+<div class="row gy-4">
+  <!-- Role Header Card -->
+  <div class="col-12">
+    <div class="card bg-white p-4 shadow-sm border-0">
+      <div class="d-md-flex align-items-center justify-content-between">
+        <div>
+          <span class="badge badge-role-{{ user.role }} mb-2">{{ role_name }}</span>
+          <h1 class="h3 fw-bold mb-1">{{ role_title }}</h1>
+          <p class="text-muted mb-0">{{ role_description }}</p>
+        </div>
+        <div class="mt-3 mt-md-0 text-md-end">
+          <div class="small text-muted">Signed in as <strong>{{ user.email }}</strong></div>
+          {% if user.institution %}
+            <div class="small text-secondary">Institution: <strong>{{ user.institution.name }}</strong> ({{ user.institution.city }})</div>
+          {% elif user.company %}
+            <div class="small text-secondary">
+              Company: <strong>{{ user.company.name }}</strong> [{{ user.company.industry }}]
+              {% if user.company.is_approved %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle ms-1">&check; Approved</span>
+              {% else %}
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ms-1">&iexcl; Pending Admin Approval</span>
+              {% endif %}
+            </div>
+          {% endif %}
+          <div class="mt-2">
+            {% if user.is_verified %}
+              <span class="badge bg-success-subtle text-success border border-success-subtle">&check; Verified Email</span>
+            {% else %}
+              <span class="badge bg-warning text-dark">&iexcl; Email unverified</span>
+              <a href="{% url 'accounts:resend_verification' %}" class="small ms-1">Resend link</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Role Notice: Unapproved Company Recruiter -->
+  {% if user.role == 'recruiter' and not is_company_approved %}
+    <div class="col-12">
+      <div class="alert alert-warning shadow-sm border-warning-subtle mb-0">
+        <h2 class="h6 fw-bold mb-1">&iexcl; Company Verification Pending</h2>
+        <p class="small mb-0">
+          Your company (<strong>{{ user.company.name|default:"Not selected" }}</strong>) is currently pending review by Nuvelle administrators. You can create draft postings, and will be able to publish opportunities once your company is approved.
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- ================================================================= -->
+  <!-- ROLE SPECIFIC WORKSPACES -->
+  <!-- ================================================================= -->
+
+  <!-- STUDENT DASHBOARD -->
+  {% if user.role == 'student' %}
+    <!-- Student Metrics Row -->
+    <div class="col-md-4">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-body p-4 d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-baseline mb-2">
+            <span class="text-muted small fw-semibold text-uppercase">Profile Completeness</span>
+            <span class="fs-4 fw-bold text-primary">{{ completeness }}%</span>
+          </div>
+          <div class="progress mb-3" style="height: 8px;">
+            <div class="progress-bar bg-success" style="width: {{ completeness }}%;"></div>
+          </div>
+          <div class="d-flex justify-content-between p-2 bg-light rounded small mb-3">
+            <span>Verified Skills: <strong class="text-success">{{ verified_skills_count }}</strong></span>
+            <span>Pending Review: <strong class="text-warning-emphasis">{{ unverified_skills_count }}</strong></span>
+          </div>
+          <div class="mt-auto pt-2 border-top">
+            <a href="{% url 'profiles:profile_edit' %}" class="btn btn-outline-primary btn-sm w-100">Edit Skills & Resume &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <span class="fw-bold">My Applications Pipeline</span>
+          <a href="{% url 'applications:student_applications' %}" class="small text-decoration-none">View All ({{ total_applications }}) &rarr;</a>
+        </div>
+        <div class="card-body p-4">
+          <!-- Pipeline Stats -->
+          <div class="row g-2 mb-3 text-center">
+            <div class="col-3">
+              <div class="p-2 bg-light rounded border">
+                <div class="text-muted small">Total Applied</div>
+                <div class="fs-5 fw-bold text-dark">{{ total_applications }}</div>
+              </div>
+            </div>
+            <div class="col-3">
+              <div class="p-2 bg-light rounded border">
+                <div class="text-muted small">Shortlisted</div>
+                <div class="fs-5 fw-bold text-primary">{{ shortlisted_count }}</div>
+              </div>
+            </div>
+            <div class="col-3">
+              <div class="p-2 bg-light rounded border">
+                <div class="text-muted small">Interview</div>
+                <div class="fs-5 fw-bold text-warning-emphasis">{{ interview_count }}</div>
+              </div>
+            </div>
+            <div class="col-3">
+              <div class="p-2 bg-light rounded border">
+                <div class="text-muted small">Offers</div>
+                <div class="fs-5 fw-bold text-success">{{ offered_count }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Applications Table -->
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0 small">
+              <thead class="table-light">
+                <tr>
+                  <th>Role / Company</th>
+                  <th>Match Score</th>
+                  <th>Status</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for app in recent_applications %}
+                  <tr>
+                    <td>
+                      <strong>{{ app.opportunity.title }}</strong>
+                      <div class="text-muted">{{ app.opportunity.company.name }}</div>
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-dark border">{{ app.match_score_at_apply }}%</span>
+                    </td>
+                    <td>
+                      <span class="badge badge-status-{{ app.status }}">{{ app.get_status_display }}</span>
+                    </td>
+                    <td class="text-end">
+                      <a href="{% url 'matching:opportunity_gap_report' app.opportunity.pk %}" class="btn btn-outline-info btn-sm py-0 px-2">Gap Report</a>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="4" class="text-center py-3 text-muted">You haven't applied to any opportunities yet.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <!-- RECRUITER DASHBOARD -->
+  {% elif user.role == 'recruiter' %}
+    <div class="col-md-5">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <span class="fw-bold">My Hiring Overview</span>
+          <span class="badge bg-light text-secondary border">{{ recruiter_opps_count }} Roles</span>
+        </div>
+        <div class="card-body p-4 d-flex flex-column">
+          <div class="row g-2 text-center mb-3">
+            <div class="col-6">
+              <div class="p-2 bg-light rounded border">
+                <div class="text-muted small">Published Roles</div>
+                <div class="fs-4 fw-bold text-success">{{ recruiter_published_count }}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-2 bg-light rounded border">
+                <div class="text-muted small">Total Candidates</div>
+                <div class="fs-4 fw-bold text-primary">{{ total_applicants }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="p-3 bg-light rounded small mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span>Shortlisted:</span>
+              <strong class="text-primary">{{ shortlisted_applicants }}</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span>In Interview:</span>
+              <strong class="text-warning-emphasis">{{ interview_applicants }}</strong>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span>Offers Extended:</span>
+              <strong class="text-success">{{ offered_applicants }}</strong>
+            </div>
+          </div>
+          <div class="mt-auto d-flex gap-2 pt-2 border-top">
+            <a href="{% url 'opportunities:recruiter_list' %}" class="btn btn-outline-primary btn-sm flex-grow-1">Manage Roles</a>
+            <a href="{% url 'opportunities:opportunity_create' %}" class="btn btn-primary btn-sm flex-grow-1">+ Post New Role</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-7">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <span class="fw-bold">Recent Postings & Pipeline</span>
+          <a href="{% url 'opportunities:recruiter_list' %}" class="small text-decoration-none">All Roles &rarr;</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0 small">
+            <thead class="table-light">
+              <tr>
+                <th>Title / Type</th>
+                <th>Status</th>
+                <th>Applicants</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for opp in recent_opportunities %}
+                <tr>
+                  <td>
+                    <strong>{{ opp.title }}</strong>
+                    <div class="text-muted">{{ opp.get_type_display }} &bull; {{ opp.location }}</div>
+                  </td>
+                  <td>
+                    {% if opp.status == 'published' %}
+                      <span class="badge bg-success-subtle text-success border border-success-subtle">Published</span>
+                    {% elif opp.status == 'closed' %}
+                      <span class="badge bg-secondary-subtle text-secondary border">Closed</span>
+                    {% else %}
+                      <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Draft</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold">
+                      {{ opp.applications.count }}
+                    </span>
+                  </td>
+                  <td class="text-end">
+                    <a href="{% url 'applications:applicant_list' opp.pk %}" class="btn btn-outline-success btn-sm py-0 px-2">Applicants</a>
+                    <a href="{% url 'opportunities:recruiter_detail' opp.pk %}" class="btn btn-outline-primary btn-sm py-0 px-2 ms-1">Manage</a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center py-4 text-muted">No postings created yet. Click "+ Post New Role" to begin.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  <!-- FACULTY DASHBOARD -->
+  {% elif user.role == 'faculty' %}
+    <div class="col-md-5">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <span class="fw-bold">Skill Verification Queue</span>
+          <span class="badge bg-warning text-dark">{{ pending_verifications_count }} Pending</span>
+        </div>
+        <div class="card-body p-4 d-flex flex-column">
+          <p class="text-muted small">
+            Review self-assessed skills claimed by students in <strong>{{ user.institution.name }}</strong>.
+          </p>
+          <div class="p-3 bg-light rounded text-center mb-3">
+            <div class="text-muted small">Department Students</div>
+            <div class="display-6 fw-bold text-dark">{{ students_count }}</div>
+          </div>
+          <div class="mt-auto pt-2 border-top">
+            <a href="{% url 'profiles:verification_queue' %}" class="btn btn-primary btn-sm w-100">
+              Open Verification Queue ({{ pending_verifications_count }}) &rarr;
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-7">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <span class="fw-bold">Recent Pending Skill Claims</span>
+          <a href="{% url 'matching:batch_skill_map' %}" class="small text-decoration-none">Batch Skill Map &rarr;</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0 small">
+            <thead class="table-light">
+              <tr>
+                <th>Student</th>
+                <th>Skill Claimed</th>
+                <th>Level</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in recent_pending_skills %}
+                <tr>
+                  <td>
+                    <strong>{{ s.student.user.get_full_name|default:s.student.roll_no }}</strong>
+                    <div class="text-muted">{{ s.student.programme }} ({{ s.student.batch }})</div>
+                  </td>
+                  <td><strong>{{ s.skill.name }}</strong></td>
+                  <td><span class="badge bg-light text-dark border">Level {{ s.level }}</span></td>
+                  <td class="text-end">
+                    <a href="{% url 'profiles:verification_queue' %}?q={{ s.student.roll_no }}" class="btn btn-outline-primary btn-sm py-0 px-2">Review</a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center py-4 text-muted">All student skill claims are verified! &check;</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  <!-- OFFICER DASHBOARD -->
+  {% elif user.role == 'officer' %}
+    <div class="col-md-6 col-lg-3">
+      <div class="card shadow-sm border-0 h-100 p-3">
+        <div class="text-muted small fw-semibold text-uppercase">Cohort Size</div>
+        <div class="display-6 fw-bold text-dark mt-1">{{ students_count }}</div>
+        <div class="small text-muted">{{ batches_count }} Registered Batches</div>
+        <div class="mt-3 pt-2 border-top">
+          <a href="{% url 'profiles:student_list' %}" class="small text-decoration-none">Browse Batches &rarr;</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+      <div class="card shadow-sm border-0 h-100 p-3">
+        <div class="text-muted small fw-semibold text-uppercase">Skill Verifications</div>
+        <div class="display-6 fw-bold text-warning-emphasis mt-1">{{ pending_verifications_count }}</div>
+        <div class="small text-muted">Claims awaiting faculty signoff</div>
+        <div class="mt-3 pt-2 border-top">
+          <a href="{% url 'profiles:verification_queue' %}" class="small text-decoration-none">Review Queue &rarr;</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+      <div class="card shadow-sm border-0 h-100 p-3">
+        <div class="text-muted small fw-semibold text-uppercase">Active Postings</div>
+        <div class="display-6 fw-bold text-primary mt-1">{{ open_opportunities_count }}</div>
+        <div class="small text-muted">Live employer openings</div>
+        <div class="mt-3 pt-2 border-top">
+          <a href="{% url 'opportunities:opportunity_list' %}" class="small text-decoration-none">Browse Postings &rarr;</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+      <div class="card shadow-sm border-0 h-100 p-3">
+        <div class="text-muted small fw-semibold text-uppercase">Cohort Readiness</div>
+        <div class="h5 fw-bold text-success mt-2 mb-1">Batch Analytics</div>
+        <div class="small text-muted">Gap analysis against roles</div>
+        <div class="mt-3 pt-2 border-top">
+          <a href="{% url 'matching:batch_skill_map' %}" class="small text-decoration-none">View Skill Map &rarr;</a>
+        </div>
+      </div>
+    </div>
+
+  <!-- ADMIN DASHBOARD -->
+  {% elif user.role == 'admin' %}
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0 h-100 p-3">
+        <div class="text-muted small fw-semibold text-uppercase">Institutions</div>
+        <div class="fs-4 fw-bold text-dark mt-1">{{ total_institutions_count }}</div>
+        <div class="small {% if pending_institutions_count > 0 %}text-warning fw-bold{% else %}text-muted{% endif %}">
+          {{ pending_institutions_count }} Pending Review
+        </div>
+        <div class="mt-2 pt-2 border-top">
+          <a href="{% url 'orgs:manage_orgs' %}" class="small text-decoration-none">Manage Colleges &rarr;</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0 h-100 p-3">
+        <div class="text-muted small fw-semibold text-uppercase">Companies</div>
+        <div class="fs-4 fw-bold text-dark mt-1">{{ total_companies_count }}</div>
+        <div class="small {% if pending_companies_count > 0 %}text-warning fw-bold{% else %}text-muted{% endif %}">
+          {{ pending_companies_count }} Pending Review
+        </div>
+        <div class="mt-2 pt-2 border-top">
+          <a href="{% url 'orgs:manage_orgs' %}" class="small text-decoration-none">Manage Companies &rarr;</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0 h-100 p-3">
+        <div class="text-muted small fw-semibold text-uppercase">Total Users</div>
+        <div class="fs-4 fw-bold text-primary mt-1">{{ total_users_count }}</div>
+        <div class="small text-muted">{{ total_students_count }} Students</div>
+        <div class="mt-2 pt-2 border-top">
+          <a href="{% url 'admin:index' %}" class="small text-decoration-none" target="_blank" rel="noopener">User Directory &nearr;</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0 h-100 p-3">
+        <div class="text-muted small fw-semibold text-uppercase">Opportunities</div>
+        <div class="fs-4 fw-bold text-success mt-1">{{ total_opportunities_count }}</div>
+        <div class="small text-muted">{{ published_opportunities_count }} Active</div>
+        <div class="mt-2 pt-2 border-top">
+          <a href="{% url 'opportunities:opportunity_list' %}" class="small text-decoration-none">All Opportunities &rarr;</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Audit Logs -->
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <span class="fw-bold">System Compliance & Audit Trail</span>
+          <span class="badge bg-light text-secondary border">Recent Platform Actions</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0 small">
+            <thead class="table-light">
+              <tr>
+                <th>Timestamp</th>
+                <th>Actor</th>
+                <th>Action</th>
+                <th>Object Type</th>
+                <th>Record ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in recent_audit_logs %}
+                <tr>
+                  <td class="text-muted">{{ log.created_at|date:"d M Y, H:i:s" }}</td>
+                  <td><strong>{{ log.user.email|default:"System" }}</strong></td>
+                  <td><span class="badge bg-light text-dark border">{{ log.action }}</span></td>
+                  <td>{{ log.object_type }}</td>
+                  <td><code>#{{ log.object_id }}</code></td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center py-3 text-muted">No audit trail records yet.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- ================================================================= -->
+  <!-- CROSS-PLATFORM HUBS: NOTIFICATIONS & MARKET TRENDS -->
+  <!-- ================================================================= -->
+
+  <!-- Recent Notifications Hub -->
+  <div class="col-lg-6">
+    <div class="card h-100 shadow-sm border-0">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Recent Notifications</span>
+        <a href="{% url 'notifications:notification_list' %}" class="small text-decoration-none">
+          All Notifications {% if unread_notifications_count > 0 %}<span class="badge bg-danger ms-1">{{ unread_notifications_count }}</span>{% endif %} &rarr;
+        </a>
+      </div>
+      <div class="list-group list-group-flush small">
+        {% for n in recent_notifications %}
+          <div class="list-group-item p-3 {% if not n.is_read %}bg-light border-start border-primary border-3{% endif %}">
+            <div class="d-flex justify-content-between align-items-baseline mb-1">
+              <span class="text-muted">{{ n.created_at|date:"d M, H:i" }}</span>
+              {% if not n.is_read %}<span class="badge bg-primary">New</span>{% endif %}
+            </div>
+            <div class="text-dark mb-1">{{ n.message }}</div>
+            {% if n.link %}
+              <a href="{{ n.link }}" class="text-primary fw-semibold small text-decoration-none">View Details &rarr;</a>
+            {% endif %}
+          </div>
+        {% empty %}
+          <div class="p-4 text-center text-muted">
+            No notifications. You are all caught up! &check;
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Platform Ecosystem Shortcuts -->
+  <div class="col-lg-6">
+    <div class="card h-100 shadow-sm border-0">
+      <div class="card-header bg-white py-3">
+        <span class="fw-bold">Platform Intelligence & Taxonomies</span>
+      </div>
+      <div class="card-body p-4 d-flex flex-column justify-content-between">
+        <div class="d-flex justify-content-between p-3 bg-light rounded mb-3 small">
+          <div>Skills Taxonomy: <strong>{{ skills_count }}</strong></div>
+          <div>Categories: <strong>{{ categories_count }}</strong></div>
+          <div>Role Benchmarks: <strong>{{ role_profiles_count }}</strong></div>
+        </div>
+        <p class="text-muted small mb-3">
+          Explore benchmark roles, analyze batch competencies, or explore real-time industry hiring skill trends.
+        </p>
+        <div class="d-flex gap-2">
+          <a href="{% url 'skills:skill_list' %}" class="btn btn-outline-secondary btn-sm flex-grow-1">Taxonomy</a>
+          <a href="{% url 'skills:role_profile_list' %}" class="btn btn-outline-secondary btn-sm flex-grow-1">Role Profiles</a>
+          <a href="{% url 'matching:market_demand' %}" class="btn btn-outline-primary btn-sm flex-grow-1">Market Trends &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

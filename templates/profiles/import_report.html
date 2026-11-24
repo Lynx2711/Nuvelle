@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Import Summary & Error Report{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h1 class="h3 fw-bold mb-1">CSV Import Report</h1>
+      <p class="text-muted small mb-0">Processed on {{ summary.timestamp }} for {{ summary.institution_name }}</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'profiles:student_list' %}" class="btn btn-outline-primary btn-sm">View Student Batches</a>
+      <a href="{% url 'profiles:import_students' %}" class="btn btn-primary btn-sm">+ Import Another File</a>
+    </div>
+  </div>
+</div>
+
+<!-- Stat counters -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card p-3 shadow-sm border-success-subtle bg-success-subtle">
+      <div class="small text-success fw-bold text-uppercase">Successfully Imported</div>
+      <div class="display-6 fw-bold text-success">{{ summary.success_count }}</div>
+      <div class="small text-muted">Students registered & profiles created</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card p-3 shadow-sm border-danger-subtle bg-danger-subtle">
+      <div class="small text-danger fw-bold text-uppercase">Skipped Invalid Rows</div>
+      <div class="display-6 fw-bold text-danger">{{ summary.error_count }}</div>
+      <div class="small text-muted">Rows skipped due to duplicates or validation errors</div>
+    </div>
+  </div>
+</div>
+
+<!-- Errors table -->
+{% if errors %}
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="h5 mb-0 fw-bold text-danger">Invalid Rows ({{ errors|length }})</h2>
+        <span class="small text-muted">Review the errors below or download the CSV report to fix and re-upload.</span>
+      </div>
+      <a href="{% url 'profiles:download_error_report' %}" class="btn btn-outline-danger btn-sm">
+        &darr; Download Error Report (CSV)
+      </a>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light small">
+            <tr>
+              <th>Row</th>
+              <th>Roll No</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Programme</th>
+              <th>Batch</th>
+              <th>CGPA</th>
+              <th class="text-danger">Reason for Failure</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for err in errors %}
+              <tr>
+                <td><span class="badge bg-secondary">{{ err.row }}</span></td>
+                <td class="font-monospace small">{{ err.roll_no }}</td>
+                <td>{{ err.name }}</td>
+                <td class="small">{{ err.email }}</td>
+                <td>{{ err.programme }}</td>
+                <td>{{ err.batch }}</td>
+                <td>{{ err.cgpa }}</td>
+                <td class="text-danger small fw-semibold">{{ err.reason }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% else %}
+  <div class="card p-4 text-center border-success bg-white shadow-sm">
+    <div class="text-success fs-1 mb-2">&check;</div>
+    <h2 class="h5 fw-bold text-success">Clean Import!</h2>
+    <p class="text-muted mb-0">All rows in your CSV were validated and imported with 0 errors.</p>
+  </div>
+{% endif %}
+{% endblock %}

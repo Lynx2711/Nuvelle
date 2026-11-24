@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Explore Opportunities{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Internships & Job Opportunities</h1>
+    <p class="text-muted small mb-0">Browse company openings with skill requirements, eligibility, and pay ranges.</p>
+  </div>
+  {% if user.role == 'recruiter' %}
+    <div>
+      <a href="{% url 'opportunities:recruiter_list' %}" class="btn btn-outline-primary btn-sm">Manage My Postings</a>
+      <a href="{% url 'opportunities:opportunity_create' %}" class="btn btn-primary btn-sm ms-1">+ Post Opportunity</a>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="card shadow-sm mb-4 border-0">
+  <div class="card-body p-3">
+    <form method="get" class="row g-2 align-items-center"
+          hx-get="{% url 'opportunities:opportunity_list' %}"
+          hx-target="#opportunity-cards-wrapper"
+          hx-trigger="keyup changed delay:300ms from:#search-input, change from:#type-select, change from:#mode-select, change from:#batch-select, change from:#min-pay-input">
+
+      <div class="col-md-4">
+        <input type="search" name="q" id="search-input" class="form-control form-control-sm"
+               placeholder="Search by title, company, skill, city..." value="{{ query }}">
+      </div>
+
+      <div class="col-md-2">
+        <select name="type" id="type-select" class="form-select form-select-sm">
+          <option value="">All Types</option>
+          {% for val, label in types %}
+            <option value="{{ val }}" {% if selected_type == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <select name="mode" id="mode-select" class="form-select form-select-sm">
+          <option value="">All Modes</option>
+          {% for val, label in modes %}
+            <option value="{{ val }}" {% if selected_mode == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <input type="text" name="batch" id="batch-select" class="form-control form-control-sm"
+               placeholder="Batch (e.g. 2026)" value="{{ selected_batch }}">
+      </div>
+
+      <div class="col-md-2">
+        <input type="number" name="min_pay" id="min-pay-input" class="form-control form-control-sm"
+               placeholder="Min Pay (INR)" value="{{ selected_min_pay }}" step="5000">
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Opportunity Cards Swapped via HTMX -->
+<div id="opportunity-cards-wrapper">
+  {% include 'opportunities/partials/opportunity_cards.html' %}
+</div>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Market Skill Demand Trends{% endblock %}
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Industry Skill Demand Trends</h1>
+    <p class="text-muted small mb-0">
+      Real-time market demand metrics derived from live published internships and placements.
+    </p>
+  </div>
+  <!-- Date Range Filter Buttons -->
+  <div class="btn-group btn-group-sm" role="group" aria-label="Date range selector">
+    <a href="?range=30" class="btn {% if selected_range == '30' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Last 30 Days</a>
+    <a href="?range=90" class="btn {% if selected_range == '90' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Last 90 Days</a>
+    <a href="?range=180" class="btn {% if selected_range == '180' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Last 6 Months</a>
+    <a href="?range=all" class="btn {% if selected_range == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">All Time</a>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Chart Card -->
+  <div class="col-lg-12">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h2 class="h6 fw-bold mb-0">Most In-Demand Skills ({{ range_label }})</h2>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Top Hiring Requirements</span>
+      </div>
+      <div class="card-body p-3">
+        <div style="position: relative; height: 360px; width: 100%;">
+          <canvas id="marketDemandChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabular Ranked List -->
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <h2 class="h6 fw-bold mb-0">Complete Skill Demand Rankings</h2>
+    <span class="badge bg-light text-secondary border">{{ skills_demand|length }} Skill(s) Listed</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light small">
+        <tr>
+          <th>Demand Rank</th>
+          <th>Skill</th>
+          <th>Category</th>
+          <th>Published Opportunities Requiring Skill</th>
+          <th>Average Required Level</th>
+          <th>Average Weight</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in skills_demand %}
+          <tr>
+            <td>
+              <span class="badge {% if forloop.counter <= 3 %}bg-primary{% else %}bg-secondary{% endif %} rounded-pill">
+                #{{ item.rank }}
+              </span>
+            </td>
+            <td><strong>{{ item.skill_name }}</strong></td>
+            <td><span class="badge bg-light text-secondary border">{{ item.category_name }}</span></td>
+            <td>
+              <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold">
+                {{ item.opp_count }} Opening(s)
+              </span>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border">
+                Level {{ item.avg_required_level }}
+              </span>
+            </td>
+            <td>
+              <span class="text-muted small">{{ item.avg_weight }} / 5</span>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-5 text-muted">
+              No published opportunities found for the selected time horizon.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if skills_demand %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const labels = {{ chart_labels_json|safe }};
+    const countData = {{ chart_counts_json|safe }};
+
+    const ctx = document.getElementById('marketDemandChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Number of Published Opportunities',
+            data: countData,
+            backgroundColor: 'rgba(13, 110, 253, 0.75)',
+            borderColor: 'rgb(13, 110, 253)',
+            borderWidth: 1,
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false,
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endif %}
+{% endblock %}

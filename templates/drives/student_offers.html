@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}My Placement Offers{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <h1 class="h3 fw-bold mb-1">My Placement & Internship Offers</h1>
+  <p class="text-muted small">Review formal offers extended by employers and record your decision.</p>
+</div>
+
+<div class="row g-4">
+  {% for offer in offers %}
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <div>
+            <h2 class="h5 fw-bold mb-0 text-primary">{{ offer.application.opportunity.title }}</h2>
+            <div class="text-muted small">{{ offer.application.opportunity.company.name }}</div>
+          </div>
+          <div>
+            {% if offer.status == 'accepted' %}
+              <span class="badge bg-success-subtle text-success border border-success-subtle">&check; Accepted</span>
+            {% elif offer.status == 'declined' %}
+              <span class="badge bg-danger-subtle text-danger border border-danger-subtle">&times; Declined</span>
+            {% else %}
+              <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Pending Decision</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card-body p-4 d-flex flex-column">
+          <div class="p-3 bg-light rounded text-center mb-3">
+            <div class="text-muted small fw-semibold text-uppercase">Compensation Package</div>
+            <div class="display-6 fw-bold text-success mt-1">&#8377;{{ offer.package }}</div>
+            <div class="small text-muted">Per Annum (CTC)</div>
+          </div>
+
+          <div class="small text-muted mb-3">
+            <div><strong>Offered On:</strong> {{ offer.offered_on|date:"d M Y" }}</div>
+            {% if offer.notes %}
+              <div class="mt-2 p-2 bg-light rounded">
+                <strong>Terms / Notes:</strong> {{ offer.notes }}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="mt-auto pt-3 border-top">
+            {% if offer.status == 'pending' %}
+              <div class="d-flex gap-2">
+                <form action="{% url 'drives:offer_respond' offer.pk 'accept' %}" method="post" class="flex-grow-1">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-success btn-sm w-100" onclick="return confirm('Accept this offer? This will mark you as placed.');">
+                    &check; Accept Offer
+                  </button>
+                </form>
+                <form action="{% url 'drives:offer_respond' offer.pk 'decline' %}" method="post" class="flex-grow-1">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-outline-danger btn-sm w-100" onclick="return confirm('Are you sure you want to decline this offer?');">
+                    Decline
+                  </button>
+                </form>
+              </div>
+            {% else %}
+              <div class="text-center small text-muted">
+                Decision recorded on {{ offer.updated_at|date:"d M Y, H:i" }}.
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="col-12">
+      <div class="card p-5 text-center text-muted shadow-sm">
+        <p class="mb-0">No placement offers received yet.</p>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div>
+        <h1 class="h3 fw-bold mb-1">Notifications Hub</h1>
+        <p class="text-muted small mb-0">System updates, application status changes, and verification alerts.</p>
+      </div>
+      <div class="d-flex gap-2">
+        {% if unread_count > 0 %}
+          <form action="{% url 'notifications:mark_all_read' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-primary btn-sm">
+              &check; Mark All as Read ({{ unread_count }})
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <ul class="nav nav-pills mb-4 bg-light p-2 rounded shadow-sm">
+      <li class="nav-item">
+        <a class="nav-link {% if selected_filter == 'all' or not selected_filter %}active{% endif %} py-1 px-3 small" href="?filter=all">
+          All Notifications ({{ total_count }})
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if selected_filter == 'unread' %}active{% endif %} py-1 px-3 small" href="?filter=unread">
+          Unread {% if unread_count > 0 %}<span class="badge bg-danger ms-1">{{ unread_count }}</span>{% endif %}
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if selected_filter == 'read' %}active{% endif %} py-1 px-3 small" href="?filter=read">
+          Read
+        </a>
+      </li>
+    </ul>
+
+    <!-- Notifications List -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="list-group list-group-flush">
+        {% for n in notifications %}
+          <div class="list-group-item p-3 {% if not n.is_read %}bg-light border-start border-primary border-4{% endif %} d-flex justify-content-between align-items-start gap-3">
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                {% if not n.is_read %}
+                  <span class="badge bg-primary rounded-pill small">New</span>
+                {% endif %}
+                <span class="small text-muted" title="{{ n.created_at|date:'Y-m-d H:i:s' }} Asia/Kolkata">
+                  {{ n.created_at|date:"d M Y, H:i" }}
+                </span>
+              </div>
+              <div class="text-dark {% if not n.is_read %}fw-semibold{% endif %} mb-2">
+                {{ n.message }}
+              </div>
+              {% if n.link %}
+                <div>
+                  <a href="{{ n.link }}" class="small text-decoration-none fw-bold text-primary">
+                    View Details &rarr;
+                  </a>
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Read status / toggle action -->
+            <div class="text-end">
+              {% if not n.is_read %}
+                <form action="{% url 'notifications:mark_read' n.pk %}" method="post" hx-post="{% url 'notifications:mark_read' n.pk %}" hx-swap="outerHTML">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="btn btn-outline-secondary btn-sm py-0 px-2 small" title="Mark as Read">
+                    &check; Read
+                  </button>
+                </form>
+              {% else %}
+                <span class="badge bg-light text-muted border">Read</span>
+              {% endif %}
+            </div>
+          </div>
+        {% empty %}
+          <div class="text-center py-5 text-muted">
+            <div class="fs-4 mb-2">&check;</div>
+            <div>No notifications found.</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+      <div class="d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm">
+        <span class="small text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        <div>
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&filter={{ selected_filter }}" class="btn btn-outline-secondary btn-sm">Previous</a>
+          {% endif %}
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&filter={{ selected_filter }}" class="btn btn-outline-secondary btn-sm ms-1">Next</a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

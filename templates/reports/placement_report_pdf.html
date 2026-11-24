@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Nuvelle Placement Report</title>
+  <style>
+    @page {
+      size: a4 portrait;
+      margin: 1.5cm;
+      @bottom-right {
+        content: "Page " counter(page) " of " counter(pages);
+      }
+    }
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.4;
+      color: #333333;
+    }
+    h1 {
+      font-size: 20pt;
+      color: #0d6efd;
+      margin-bottom: 4px;
+    }
+    h2 {
+      font-size: 14pt;
+      color: #1a1a1a;
+      border-bottom: 1px solid #cccccc;
+      padding-bottom: 4px;
+      margin-top: 18px;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 10pt;
+      color: #666666;
+      margin-bottom: 16px;
+    }
+    .kpi-table {
+      width: 100%;
+      margin-bottom: 20px;
+      border-collapse: collapse;
+    }
+    .kpi-box {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      padding: 10px;
+      text-align: center;
+      width: 25%;
+    }
+    .kpi-val {
+      font-size: 16pt;
+      font-weight: bold;
+      color: #0d6efd;
+      margin-top: 4px;
+    }
+    .kpi-lbl {
+      font-size: 9pt;
+      text-transform: uppercase;
+      color: #6c757d;
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      font-size: 9pt;
+    }
+    table.data-table th, table.data-table td {
+      border: 1px solid #dee2e6;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    table.data-table th {
+      background-color: #f1f3f5;
+      font-weight: bold;
+    }
+    .footer {
+      font-size: 8pt;
+      color: #888888;
+      text-align: center;
+      margin-top: 25px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Nuvelle Placement & Recruitment Report</h1>
+  <div class="subtitle">
+    Institution: <strong>{{ stats.institution.name|default:"All Partner Institutions" }}</strong> &bull; Generated on: {{ stats.generated_at|date:"d M Y, H:i" }} (UTC)
+  </div>
+
+  <!-- Key Metrics Table -->
+  <table class="kpi-table">
+    <tr>
+      <td class="kpi-box">
+        <div class="kpi-lbl">Total Cohort</div>
+        <div class="kpi-val">{{ stats.total_students }}</div>
+      </td>
+      <td class="kpi-box">
+        <div class="kpi-lbl">Placement Rate</div>
+        <div class="kpi-val">{{ stats.placement_rate }}%</div>
+      </td>
+      <td class="kpi-box">
+        <div class="kpi-lbl">Highest Package</div>
+        <div class="kpi-val">&#8377;{{ stats.highest_package }}</div>
+      </td>
+      <td class="kpi-box">
+        <div class="kpi-lbl">Average Package</div>
+        <div class="kpi-val">&#8377;{{ stats.average_package }}</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Department Breakdown -->
+  <h2>Department / Programme Breakdown</h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Department / Programme</th>
+        <th>Total</th>
+        <th>Placed</th>
+        <th>Rate (%)</th>
+        <th>Highest CTC (INR)</th>
+        <th>Average CTC (INR)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in stats.departments_data %}
+        <tr>
+          <td><strong>{{ d.programme }}</strong></td>
+          <td>{{ d.total_students }}</td>
+          <td>{{ d.placed_students }}</td>
+          <td>{{ d.placement_rate }}%</td>
+          <td>&#8377;{{ d.highest_package }}</td>
+          <td>&#8377;{{ d.average_package }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" style="text-align: center; color: #777;">No department records found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Company Breakdown -->
+  <h2>Top Recruiting Companies</h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Company Name</th>
+        <th>Accepted Offers</th>
+        <th>Highest Package (INR)</th>
+        <th>Average Package (INR)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in stats.companies_data %}
+        <tr>
+          <td><strong>{{ c.company_name }}</strong></td>
+          <td>{{ c.offers_count }}</td>
+          <td>&#8377;{{ c.highest_package }}</td>
+          <td>&#8377;{{ c.average_package }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="4" style="text-align: center; color: #777;">No recruiting company data recorded yet.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Batch Breakdown -->
+  <h2>Batch / Graduation Year Analysis</h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Batch Year</th>
+        <th>Total Students</th>
+        <th>Placed Students</th>
+        <th>Placement Rate (%)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in stats.batches_data %}
+        <tr>
+          <td>Batch {{ b.batch }}</td>
+          <td>{{ b.total_students }}</td>
+          <td>{{ b.placed_students }}</td>
+          <td>{{ b.placement_rate }}%</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="4" style="text-align: center; color: #777;">No batch data found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    Report generated automatically by Nuvelle &bull; Academia & Industry Skill & Placement Portal
+  </div>
+</body>
+</html>

@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Eligible Students &bull; {{ drive.opportunity.title }}{% endblock %}
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <a href="{% url 'drives:drive_detail' drive.pk %}" class="small text-decoration-none">&larr; Back to Placement Drive</a>
+    <h1 class="h3 fw-bold mb-1 mt-1">Eligible Students Cohort</h1>
+    <div class="text-muted small">
+      {{ drive.opportunity.title }} &bull; {{ drive.institution.name }} ({{ total_eligible }} Eligible Students)
+    </div>
+  </div>
+  <div>
+    <a href="?export=csv" class="btn btn-outline-success btn-sm">
+      &darr; Export Cohort CSV
+    </a>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light small">
+        <tr>
+          <th>Roll No / Candidate</th>
+          <th>Programme & Batch</th>
+          <th>CGPA</th>
+          <th>Skill Match Score</th>
+          <th>Application Status</th>
+          <th>Placed Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in eligible_students %}
+          <tr>
+            <td>
+              <div class="fw-bold">{{ row.student_profile.user.get_full_name|default:row.student_profile.roll_no }}</div>
+              <div class="text-muted small">{{ row.student_profile.roll_no }} &bull; {{ row.student_profile.user.email }}</div>
+            </td>
+            <td>
+              <div>{{ row.student_profile.programme }}</div>
+              <div class="text-muted small">Batch {{ row.student_profile.batch }}</div>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border">{{ row.student_profile.cgpa|default:"N/A" }}</span>
+            </td>
+            <td>
+              <span class="badge {% if row.match_score >= 75 %}bg-success-subtle text-success border border-success-subtle{% elif row.match_score >= 50 %}bg-warning-subtle text-warning-emphasis border border-warning-subtle{% else %}bg-secondary-subtle text-secondary border{% endif %} fw-bold">
+                {{ row.match_score }}% Match
+              </span>
+            </td>
+            <td>
+              {% if row.has_applied %}
+                <span class="badge badge-status-{{ row.application.status }}">{{ row.status }}</span>
+              {% else %}
+                <span class="badge bg-light text-muted border">Not Applied</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if row.is_placed %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle">&check; Placed</span>
+              {% else %}
+                <span class="badge bg-light text-secondary border">Unplaced</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'profiles:student_detail' row.student_profile.pk %}" class="btn btn-outline-primary btn-sm py-0 px-2">Profile</a>
+              {% if row.has_applied and user.role in 'recruiter,admin' %}
+                <a href="{% url 'drives:create_offer' row.application.pk %}" class="btn btn-outline-success btn-sm py-0 px-2 ms-1">
+                  {% if row.application.offer %}Edit Offer{% else %}Extend Offer{% endif %}
+                </a>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">
+              No students from {{ drive.institution.name }} meet the criteria for this opportunity.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

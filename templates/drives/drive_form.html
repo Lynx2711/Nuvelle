@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Schedule Placement Drive{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white py-3">
+        <h1 class="h5 fw-bold mb-0">Schedule a New Placement Drive</h1>
+      </div>
+      <div class="card-body p-4">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Opportunity Posting *</label>
+            {{ form.opportunity }}
+            {% if form.opportunity.errors %}<div class="text-danger small">{{ form.opportunity.errors }}</div>{% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Host Institution *</label>
+            {{ form.institution }}
+            {% if form.institution.errors %}<div class="text-danger small">{{ form.institution.errors }}</div>{% endif %}
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold small">Drive Date *</label>
+              {{ form.drive_date }}
+              {% if form.drive_date.errors %}<div class="text-danger small">{{ form.drive_date.errors }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold small">Status *</label>
+              {{ form.status }}
+              {% if form.status.errors %}<div class="text-danger small">{{ form.status.errors }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Venue / Link *</label>
+            {{ form.venue }}
+            {% if form.venue.errors %}<div class="text-danger small">{{ form.venue.errors }}</div>{% endif %}
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-bold small">Drive Rules & Guidelines</label>
+            {{ form.rules }}
+            {% if form.rules.errors %}<div class="text-danger small">{{ form.rules.errors }}</div>{% endif %}
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <a href="{% url 'drives:drive_list' %}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary px-4">Schedule Drive &rarr;</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

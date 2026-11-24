@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Skill Gap Report &bull; {{ target_title }}{% endblock %}
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <span class="badge bg-secondary-subtle text-secondary border mb-1">{{ target_type }}</span>
+    <h1 class="h3 fw-bold mb-0">{{ target_title }}</h1>
+    <div class="text-muted small">{{ target_subtitle|safe }}</div>
+  </div>
+  <div>
+    {% if opportunity %}
+      <a href="{% url 'opportunities:opportunity_detail' opportunity.pk %}" class="btn btn-outline-secondary btn-sm">
+        &larr; Back to Opportunity
+      </a>
+    {% elif role_profile %}
+      <a href="{% url 'skills:role_profile_list' %}" class="btn btn-outline-secondary btn-sm">
+        &larr; Back to Role Profiles
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Match Score Summary Card -->
+  <div class="col-lg-4">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body p-4 text-center d-flex flex-column justify-content-center">
+        <div class="text-muted small fw-semibold text-uppercase mb-2">Overall Match Score</div>
+        <div class="display-3 fw-bold {% if match_score >= 75 %}text-success{% elif match_score >= 50 %}text-warning{% else %}text-secondary{% endif %} mb-2">
+          {{ match_score }}%
+        </div>
+        <div class="progress mb-3" style="height: 10px;" role="progressbar" aria-valuenow="{{ match_score }}" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-bar {% if match_score >= 75 %}bg-success{% elif match_score >= 50 %}bg-warning{% else %}bg-secondary{% endif %}" style="width: {{ match_score }}%"></div>
+        </div>
+        <p class="small text-muted mb-0">
+          Evaluated for student <strong>{{ student.user.email }}</strong> (Roll: {{ student.roll_no }}).
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Radar Chart Card -->
+  <div class="col-lg-8">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-header bg-white py-3">
+        <h2 class="h6 fw-bold mb-0">Skill Competency Comparison (Radar)</h2>
+      </div>
+      <div class="card-body p-3">
+        <div style="position: relative; height: 320px; width: 100%;">
+          <canvas id="gapRadarChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detailed Skill Gap Breakdown Table -->
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <h2 class="h6 fw-bold mb-0">Required Skills & Gap Analysis (Sorted by Priority: Weight &times; Gap)</h2>
+    <span class="badge bg-light text-secondary border">{{ gap_report|length }} Skill(s) Analyzed</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light small">
+        <tr>
+          <th>Priority Rank</th>
+          <th>Skill</th>
+          <th>Category</th>
+          <th>Required Level</th>
+          <th>Your Level</th>
+          <th>Gap</th>
+          <th>Weight</th>
+          <th>Priority Score</th>
+          <th>Coverage Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in gap_report %}
+          <tr class="{% if item.gap > 0 %}table-warning-subtle{% else %}table-success-subtle{% endif %}">
+            <td>
+              <span class="badge bg-dark rounded-pill">{{ forloop.counter }}</span>
+            </td>
+            <td>
+              <strong>{{ item.skill_name }}</strong>
+            </td>
+            <td>
+              <span class="badge bg-light text-secondary border">{{ item.category_name|default:"General" }}</span>
+            </td>
+            <td>
+              <span class="badge bg-primary">Level {{ item.required_level }}</span>
+            </td>
+            <td>
+              {% if item.student_level > 0 %}
+                <span class="badge bg-info text-dark">Level {{ item.student_level }}</span>
+              {% else %}
+                <span class="badge bg-secondary">Unclaimed (0)</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.gap > 0 %}
+                <span class="text-danger fw-bold">+{{ item.gap }} level(s) needed</span>
+              {% else %}
+                <span class="text-success fw-bold">&check; Fully Met</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border">{{ item.weight }} / 5</span>
+            </td>
+            <td>
+              <span class="fw-bold {% if item.priority > 0 %}text-danger{% else %}text-muted{% endif %}">
+                {{ item.priority }}
+              </span>
+            </td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="progress flex-grow-1" style="height: 6px;">
+                  <div class="progress-bar {% if item.coverage_pct >= 100 %}bg-success{% elif item.coverage_pct >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ item.coverage_pct }}%;"></div>
+                </div>
+                <span class="small text-muted">{{ item.coverage_pct }}%</span>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="9" class="text-center py-4 text-muted">No skill requirements specified for this profile.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const labels = {{ chart_labels_json|safe }};
+    const requiredData = {{ chart_required_json|safe }};
+    const studentData = {{ chart_student_json|safe }};
+
+    const ctx = document.getElementById('gapRadarChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Required Benchmark Level',
+            data: requiredData,
+            backgroundColor: 'rgba(13, 110, 253, 0.15)',
+            borderColor: 'rgba(13, 110, 253, 0.9)',
+            borderWidth: 2,
+            pointBackgroundColor: 'rgba(13, 110, 253, 1)',
+            pointRadius: 4,
+          },
+          {
+            label: 'Your Current Level',
+            data: studentData,
+            backgroundColor: 'rgba(25, 135, 84, 0.25)',
+            borderColor: 'rgba(25, 135, 84, 0.9)',
+            borderWidth: 2,
+            pointBackgroundColor: 'rgba(25, 135, 84, 1)',
+            pointRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            min: 0,
+            max: 4,
+            ticks: {
+              stepSize: 1,
+              callback: function(val) {
+                const map = {1: '1 (Beg)', 2: '2 (Int)', 3: '3 (Adv)', 4: '4 (Exp)'};
+                return map[val] || val;
+              }
+            },
+            pointLabels: {
+              font: {
+                size: 12,
+                weight: 'bold'
+              }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

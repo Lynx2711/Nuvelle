@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Company Opportunities{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Company Postings: {{ company.name }}</h1>
+    <p class="text-muted small mb-0">Create, edit, publish, and monitor your internship and job postings.</p>
+  </div>
+  <div>
+    <a href="{% url 'opportunities:opportunity_create' %}" class="btn btn-primary btn-sm">+ Create New Opportunity</a>
+  </div>
+</div>
+
+{% if not is_company_approved %}
+  <div class="alert alert-warning shadow-sm border-warning-subtle mb-4">
+    <div class="fw-bold mb-1">&iexcl; Employer Account Pending Approval</div>
+    <div class="small">
+      Your company (<strong>{{ company.name }}</strong>) is currently pending review by Nuvelle administrators. Per platform rules, recruiters can save drafts, but publishing to students requires company approval.
+    </div>
+  </div>
+{% endif %}
+
+<div class="card shadow-sm border-0">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light small">
+        <tr>
+          <th>Title / Location</th>
+          <th>Type & Mode</th>
+          <th>Required Skills</th>
+          <th>Status</th>
+          <th>Deadline</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for opp in opportunities %}
+          <tr>
+            <td>
+              <div class="fw-semibold">
+                <a href="{% url 'opportunities:recruiter_detail' opp.pk %}" class="text-decoration-none">
+                  {{ opp.title }}
+                </a>
+              </div>
+              <div class="text-muted small">{{ opp.location }}</div>
+            </td>
+            <td>
+              <span class="badge {% if opp.type == 'internship' %}bg-info-subtle text-info-emphasis border border-info-subtle{% else %}bg-primary-subtle text-primary border border-primary-subtle{% endif %}">
+                {{ opp.get_type_display }}
+              </span>
+              <span class="badge bg-light text-secondary border ms-1">{{ opp.get_mode_display }}</span>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border">{{ opp.required_skills.count }} Skills</span>
+            </td>
+            <td>
+              {% if opp.status == 'published' %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle">&check; Published</span>
+              {% elif opp.status == 'closed' %}
+                <span class="badge bg-secondary-subtle text-secondary border">Closed</span>
+              {% else %}
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Draft</span>
+              {% endif %}
+            </td>
+            <td class="small">
+              {{ opp.deadline|date:"d M Y, H:i" }}
+              {% if opp.is_expired %}
+                <span class="badge bg-danger ms-1">Expired</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'applications:applicant_list' opp.pk %}" class="btn btn-outline-success btn-sm py-0 px-2">Applicants ({{ opp.applications.count }})</a>
+              <a href="{% url 'opportunities:recruiter_detail' opp.pk %}" class="btn btn-outline-primary btn-sm py-0 px-2 ms-1">Manage</a>
+              <a href="{% url 'opportunities:opportunity_edit' opp.pk %}" class="btn btn-outline-secondary btn-sm py-0 px-2 ms-1">Edit</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-4 text-muted">
+              No opportunities created yet. Click "+ Create New Opportunity" to post your first role.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

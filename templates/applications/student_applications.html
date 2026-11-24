@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}My Applications{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h1 class="h3 fw-bold mb-1">My Applications</h1>
+    <p class="text-muted small mb-0">Track application status, interview schedules, and offers.</p>
+  </div>
+  <div>
+    <a href="{% url 'opportunities:opportunity_list' %}" class="btn btn-outline-primary btn-sm">Explore More Opportunities &rarr;</a>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light small">
+        <tr>
+          <th>Opportunity / Company</th>
+          <th>Type & Mode</th>
+          <th>Match Score</th>
+          <th>Applied On</th>
+          <th>Status</th>
+          <th class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in applications %}
+          <tr>
+            <td>
+              <div class="fw-semibold">
+                <a href="{% url 'opportunities:opportunity_detail' app.opportunity.pk %}" class="text-decoration-none">
+                  {{ app.opportunity.title }}
+                </a>
+              </div>
+              <div class="text-muted small">{{ app.opportunity.company.name }} &bull; {{ app.opportunity.location }}</div>
+            </td>
+            <td>
+              <span class="badge {% if app.opportunity.type == 'internship' %}bg-info-subtle text-info-emphasis border border-info-subtle{% else %}bg-primary-subtle text-primary border border-primary-subtle{% endif %}">
+                {{ app.opportunity.get_type_display }}
+              </span>
+              <span class="badge bg-light text-secondary border ms-1">{{ app.opportunity.get_mode_display }}</span>
+            </td>
+            <td>
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-6">
+                {{ app.match_score_at_apply }}%
+              </span>
+            </td>
+            <td class="small text-muted">{{ app.applied_at|date:"d M Y, H:i" }}</td>
+            <td>
+              {% if app.status == 'applied' %}
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Applied</span>
+              {% elif app.status == 'shortlisted' %}
+                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">&check; Shortlisted</span>
+              {% elif app.status == 'interview' %}
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">&bull; Interview Scheduled</span>
+              {% elif app.status == 'offered' %}
+                <span class="badge bg-success text-white">&star; Offer Extended</span>
+              {% elif app.status == 'accepted' %}
+                <span class="badge bg-success text-white">&check;&check; Accepted</span>
+              {% elif app.status == 'rejected' %}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Not Selected</span>
+              {% elif app.status == 'withdrawn' %}
+                <span class="badge bg-secondary-subtle text-secondary border">Withdrawn</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'opportunities:opportunity_detail' app.opportunity.pk %}" class="btn btn-outline-secondary btn-sm py-0 px-2">View Role</a>
+              {% if app.status == 'applied' %}
+                <form action="{% url 'applications:withdraw' app.pk %}" method="post" class="d-inline ms-1">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="return confirm('Withdraw application for {{ app.opportunity.title }}?');">
+                    Withdraw
+                  </button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-5 text-muted">
+              <p class="mb-2">You haven't submitted any applications yet.</p>
+              <a href="{% url 'opportunities:opportunity_list' %}" class="btn btn-primary btn-sm">Explore Opportunities</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

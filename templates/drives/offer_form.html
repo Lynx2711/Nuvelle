@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Extend Offer &bull; {{ application.student.roll_no }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white py-3">
+        <h1 class="h5 fw-bold mb-0">Extend Formal Placement Offer</h1>
+      </div>
+      <div class="card-body p-4">
+        <!-- Candidate Summary -->
+        <div class="p-3 bg-light rounded border mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <strong>{{ application.student.user.get_full_name|default:application.student.roll_no }}</strong>
+            <span class="badge bg-primary">{{ application.student.roll_no }}</span>
+          </div>
+          <div class="small text-muted mb-2">{{ application.student.programme }} ({{ application.student.batch }}) &bull; CGPA: {{ application.student.cgpa }}</div>
+          <div class="small">Opportunity: <strong>{{ application.opportunity.title }}</strong> at {{ application.opportunity.company.name }}</div>
+        </div>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Annual Compensation Package (CTC in INR) *</label>
+            {{ form.package }}
+            <div class="form-text small">e.g. 1200000.00 (Twelve Lakhs per annum)</div>
+            {% if form.package.errors %}<div class="text-danger small">{{ form.package.errors }}</div>{% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Offer Date *</label>
+            {{ form.offered_on }}
+            {% if form.offered_on.errors %}<div class="text-danger small">{{ form.offered_on.errors }}</div>{% endif %}
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-bold small">Offer Terms & Notes</label>
+            {{ form.notes }}
+            {% if form.notes.errors %}<div class="text-danger small">{{ form.notes.errors }}</div>{% endif %}
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <a href="{% url 'applications:applicant_list' application.opportunity.pk %}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-success px-4">&check; Issue Placement Offer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

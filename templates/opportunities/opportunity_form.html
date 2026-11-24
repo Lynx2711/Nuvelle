@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-3">
+  <div class="col-lg-8">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white py-3">
+        <h1 class="h5 fw-bold mb-0">{{ title }}</h1>
+      </div>
+      <div class="card-body p-4">
+        {% if not is_company_approved %}
+          <div class="alert alert-warning small mb-3">
+            <strong>Note:</strong> Your company is pending approval. You can draft this opportunity now and publish once approved.
+          </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="id_title" class="form-label">Job / Internship Title *</label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="id_type" class="form-label">Opportunity Type *</label>
+              {{ form.type }}
+              {% if form.type.errors %}<div class="text-danger small mt-1">{{ form.type.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="id_mode" class="form-label">Work Mode *</label>
+              {{ form.mode }}
+              {% if form.mode.errors %}<div class="text-danger small mt-1">{{ form.mode.errors.0 }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="id_location" class="form-label">Location (City, State) *</label>
+              {{ form.location }}
+              {% if form.location.errors %}<div class="text-danger small mt-1">{{ form.location.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="id_openings" class="form-label">Number of Openings *</label>
+              {{ form.openings }}
+              {% if form.openings.errors %}<div class="text-danger small mt-1">{{ form.openings.errors.0 }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="id_pay_min" class="form-label">Min Pay (INR)</label>
+              {{ form.pay_min }}
+              {% if form.pay_min.errors %}<div class="text-danger small mt-1">{{ form.pay_min.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="id_pay_max" class="form-label">Max Pay (INR)</label>
+              {{ form.pay_max }}
+              {% if form.pay_max.errors %}<div class="text-danger small mt-1">{{ form.pay_max.errors.0 }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="id_deadline" class="form-label">Application Deadline *</label>
+              {{ form.deadline }}
+              <div class="form-text">{{ form.deadline.help_text }}</div>
+              {% if form.deadline.errors %}<div class="text-danger small mt-1">{{ form.deadline.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="id_min_cgpa" class="form-label">Minimum CGPA (0.00 - 10.00)</label>
+              {{ form.min_cgpa }}
+              <div class="form-text">Optional eligibility threshold</div>
+              {% if form.min_cgpa.errors %}<div class="text-danger small mt-1">{{ form.min_cgpa.errors.0 }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="id_programme" class="form-label">Eligible Programme</label>
+              {{ form.programme }}
+              <div class="form-text">{{ form.programme.help_text }}</div>
+              {% if form.programme.errors %}<div class="text-danger small mt-1">{{ form.programme.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="id_batch" class="form-label">Eligible Batch</label>
+              {{ form.batch }}
+              <div class="form-text">{{ form.batch.help_text }}</div>
+              {% if form.batch.errors %}<div class="text-danger small mt-1">{{ form.batch.errors.0 }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label for="id_description" class="form-label">Role Description & Qualifications *</label>
+            {{ form.description }}
+            {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <a href="{% url 'opportunities:recruiter_list' %}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save Opportunity</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

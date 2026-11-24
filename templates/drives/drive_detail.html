@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Drive: {{ drive.opportunity.title }} at {{ drive.institution.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'drives:drive_list' %}" class="small text-decoration-none">&larr; Back to Placement Drives</a>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Left Side: Drive Overview & Rounds -->
+  <div class="col-lg-8">
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <div>
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle mb-1">Placement Drive</span>
+          <h1 class="h4 fw-bold mb-0">{{ drive.opportunity.title }}</h1>
+          <div class="text-muted small">{{ drive.opportunity.company.name }} &bull; {{ drive.institution.name }}</div>
+        </div>
+        <div>
+          <span class="badge bg-light text-dark border text-uppercase">{{ drive.get_status_display }}</span>
+        </div>
+      </div>
+      <div class="card-body p-4">
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6">
+            <div class="p-3 bg-light rounded border">
+              <div class="text-muted small">Date & Venue</div>
+              <div class="fw-bold fs-6">{{ drive.drive_date|date:"d M Y" }}</div>
+              <div class="small text-secondary">{{ drive.venue }}</div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="p-3 bg-light rounded border">
+              <div class="text-muted small">Compensation / Openings</div>
+              <div class="fw-bold fs-6">&#8377;{{ drive.opportunity.pay_min|default:"Competitive" }} - &#8377;{{ drive.opportunity.pay_max|default:"Competitive" }}</div>
+              <div class="small text-secondary">{{ drive.opportunity.openings }} opening(s)</div>
+            </div>
+          </div>
+        </div>
+
+        {% if drive.rules %}
+          <div class="mb-4">
+            <h2 class="h6 fw-bold">Drive Rules & Instructions</h2>
+            <div class="p-3 bg-light rounded small text-secondary">{{ drive.rules|linebreaks }}</div>
+          </div>
+        {% endif %}
+
+        <!-- Rounds Timeline -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="h6 fw-bold mb-0">Interview & Evaluation Rounds ({{ drive.rounds.count }})</h2>
+          {% if can_manage %}
+            <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#addRoundCollapse">
+              + Add Round
+            </button>
+          {% endif %}
+        </div>
+
+        {% if can_manage %}
+          <!-- Add Round Form Collapse -->
+          <div class="collapse p-3 bg-light rounded mb-3 border" id="addRoundCollapse">
+            <form action="{% url 'drives:round_create' drive.pk %}" method="post" class="row g-2">
+              {% csrf_token %}
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Round Name *</label>
+                {{ round_form.name }}
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small fw-bold">Seq #</label>
+                {{ round_form.sequence }}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Date</label>
+                {{ round_form.round_date }}
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-bold">Description</label>
+                {{ round_form.description }}
+              </div>
+              <div class="col-12 text-end">
+                <button type="submit" class="btn btn-success btn-sm">Save Round</button>
+              </div>
+            </form>
+          </div>
+        {% endif %}
+
+        <div class="list-group list-group-flush border rounded">
+          {% for r in drive.rounds.all %}
+            <div class="list-group-item p-3 d-flex justify-content-between align-items-start">
+              <div>
+                <span class="badge bg-secondary rounded-pill me-2">Round {{ r.sequence }}</span>
+                <strong>{{ r.name }}</strong>
+                {% if r.round_date %}<span class="text-muted small ms-2">({{ r.round_date|date:"d M Y" }})</span>{% endif %}
+                <p class="text-muted small mb-0 mt-1">{{ r.description|default:"No specific evaluation notes." }}</p>
+              </div>
+              <div>
+                {% if r.is_completed %}
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">&check; Completed</span>
+                {% else %}
+                  <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Pending</span>
+                {% endif %}
+              </div>
+            </div>
+          {% empty %}
+            <div class="p-4 text-center text-muted small">No rounds configured yet for this drive.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Cohort & Actions -->
+  <div class="col-lg-4">
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header bg-white py-3">
+        <h2 class="h6 fw-bold mb-0">Cohort & Candidate Actions</h2>
+      </div>
+      <div class="card-body p-4 small">
+        <div class="mb-2"><strong>Target Degree:</strong> {{ drive.opportunity.programme|default:"All programmes" }}</div>
+        <div class="mb-2"><strong>Target Batch:</strong> {{ drive.opportunity.batch|default:"All batches" }}</div>
+        <div class="mb-3"><strong>Min CGPA:</strong> {{ drive.opportunity.min_cgpa|default:"None" }}</div>
+
+        <div class="d-grid gap-2 pt-2 border-top">
+          {% if user.role in 'officer,faculty,recruiter,admin' %}
+            <a href="{% url 'drives:eligible_students' drive.pk %}" class="btn btn-success btn-sm">
+              View Eligible Student List &rarr;
+            </a>
+          {% endif %}
+          <a href="{% url 'opportunities:opportunity_detail' drive.opportunity.pk %}" class="btn btn-outline-primary btn-sm">
+            View Job Details &rarr;
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

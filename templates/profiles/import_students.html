@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Import Students via CSV{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-3">
+  <div class="col-lg-8">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h1 class="h5 mb-0 fw-bold">Import Students via CSV</h1>
+        <span class="badge bg-primary-subtle text-primary border">{{ institution.name }}</span>
+      </div>
+      <div class="card-body p-4">
+        <p class="text-muted small mb-4">
+          Upload a CSV file containing your student roll data. Valid rows will be created immediately as verified student accounts under <strong>{{ institution.name }}</strong>. Invalid or duplicate rows will be skipped and presented in a detailed error report.
+        </p>
+
+        <!-- CSV format guidelines -->
+        <div class="alert alert-info border-info-subtle small mb-4">
+          <div class="fw-bold mb-1">Required CSV Columns (case-insensitive):</div>
+          <code>roll_no, name, email, programme, batch, cgpa</code>
+          <div class="mt-2 text-muted">
+            &bull; <strong>roll_no</strong>: Unique ID per student in your college (e.g. <code>22CS0101</code>)<br>
+            &bull; <strong>name</strong>: Full Name (e.g. <code>Priya Sharma</code>)<br>
+            &bull; <strong>email</strong>: Valid unique email (e.g. <code>priya@college.edu</code>)<br>
+            &bull; <strong>programme</strong>: Degree/branch (e.g. <code>B.Tech Computer Science</code>)<br>
+            &bull; <strong>batch</strong>: Graduation year or batch range (e.g. <code>2026</code>)<br>
+            &bull; <strong>cgpa</strong>: Decimal between 0.00 and 10.00 (e.g. <code>8.75</code>)<br>
+            &bull; Maximum file size: <strong>5 MB</strong>
+          </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          <div class="mb-4">
+            <label for="id_csv_file" class="form-label fw-bold">Choose CSV File *</label>
+            {{ form.csv_file }}
+            {% if form.csv_file.errors %}
+              <div class="text-danger small mt-1">{{ form.csv_file.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <a href="{% url 'profiles:student_list' %}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Process & Import CSV</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

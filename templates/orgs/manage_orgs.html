@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Organizations{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Organization Approvals & Management</h1>
+    <p class="text-muted small mb-0">Review, approve, and manage registered colleges and company employers.</p>
+  </div>
+  <div>
+    <a href="{% url 'orgs:institution_create' %}" class="btn btn-outline-primary btn-sm">+ Add Institution</a>
+    <a href="{% url 'orgs:company_create' %}" class="btn btn-primary btn-sm ms-2">+ Add Company</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Institutions Section -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header d-flex justify-content-between align-items-center py-3">
+        <h2 class="h5 mb-0 fw-bold">Institutions (Colleges)</h2>
+        {% if pending_institutions_count > 0 %}
+          <span class="badge bg-warning text-dark">{{ pending_institutions_count }} Pending</span>
+        {% else %}
+          <span class="badge bg-success-subtle text-success border">All Approved</span>
+        {% endif %}
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small">
+              <tr>
+                <th>Name / City</th>
+                <th>Users</th>
+                <th>Status</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for inst in institutions %}
+                <tr>
+                  <td>
+                    <div class="fw-semibold">{{ inst.name }}</div>
+                    <div class="text-muted small">{{ inst.city }}</div>
+                  </td>
+                  <td><span class="badge bg-light text-dark border">{{ inst.user_count }}</span></td>
+                  <td>
+                    {% if inst.is_approved %}
+                      <span class="badge bg-success-subtle text-success border border-success-subtle">Approved</span>
+                    {% else %}
+                      <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Pending</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <form action="{% url 'orgs:toggle_institution_approval' inst.pk %}" method="post" class="d-inline">
+                      {% csrf_token %}
+                      {% if inst.is_approved %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Revoke approval">Revoke</button>
+                      {% else %}
+                        <button type="submit" class="btn btn-success btn-sm py-0 px-2" title="Approve institution">Approve</button>
+                      {% endif %}
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center py-4 text-muted">No institutions registered yet.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Companies Section -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header d-flex justify-content-between align-items-center py-3">
+        <h2 class="h5 mb-0 fw-bold">Companies (Employers)</h2>
+        {% if pending_companies_count > 0 %}
+          <span class="badge bg-warning text-dark">{{ pending_companies_count }} Pending</span>
+        {% else %}
+          <span class="badge bg-success-subtle text-success border">All Approved</span>
+        {% endif %}
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small">
+              <tr>
+                <th>Company / Industry</th>
+                <th>Recruiters</th>
+                <th>Status</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for comp in companies %}
+                <tr>
+                  <td>
+                    <div class="fw-semibold">{{ comp.name }}</div>
+                    <div class="text-muted small">
+                      {{ comp.industry }}
+                      {% if comp.website %}&bull; <a href="{{ comp.website }}" target="_blank" rel="noopener" class="text-decoration-none">Website</a>{% endif %}
+                    </div>
+                  </td>
+                  <td><span class="badge bg-light text-dark border">{{ comp.user_count }}</span></td>
+                  <td>
+                    {% if comp.is_approved %}
+                      <span class="badge bg-success-subtle text-success border border-success-subtle">Approved</span>
+                    {% else %}
+                      <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Pending</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <form action="{% url 'orgs:toggle_company_approval' comp.pk %}" method="post" class="d-inline">
+                      {% csrf_token %}
+                      {% if comp.is_approved %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Revoke approval">Revoke</button>
+                      {% else %}
+                        <button type="submit" class="btn btn-success btn-sm py-0 px-2" title="Approve company">Approve</button>
+                      {% endif %}
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center py-4 text-muted">No companies registered yet.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

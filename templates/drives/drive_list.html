@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Placement Drives{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Placement Drives Hub</h1>
+    <p class="text-muted small mb-0">Campus and virtual recruitment drives connecting partner institutions and employers.</p>
+  </div>
+  {% if user.role in 'officer,recruiter,admin' %}
+    <div>
+      <a href="{% url 'drives:drive_create' %}" class="btn btn-primary btn-sm">+ Schedule Placement Drive</a>
+    </div>
+  {% endif %}
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light small">
+        <tr>
+          <th>Drive Title / Company</th>
+          <th>Host Institution</th>
+          <th>Scheduled Date</th>
+          <th>Venue</th>
+          <th>Rounds</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for drive in drives %}
+          <tr>
+            <td>
+              <div class="fw-bold">
+                <a href="{% url 'drives:drive_detail' drive.pk %}" class="text-decoration-none">
+                  {{ drive.opportunity.title }}
+                </a>
+              </div>
+              <div class="text-muted small">{{ drive.opportunity.company.name }} &bull; {{ drive.opportunity.get_type_display }}</div>
+            </td>
+            <td>
+              <div class="fw-semibold">{{ drive.institution.name }}</div>
+              <div class="text-muted small">{{ drive.institution.city }}</div>
+            </td>
+            <td>
+              <span class="fw-bold">{{ drive.drive_date|date:"d M Y" }}</span>
+            </td>
+            <td class="small">{{ drive.venue }}</td>
+            <td>
+              <span class="badge bg-light text-dark border">{{ drive.rounds.count }} Round(s)</span>
+            </td>
+            <td>
+              {% if drive.status == 'scheduled' %}
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Scheduled</span>
+              {% elif drive.status == 'in_progress' %}
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">In Progress</span>
+              {% elif drive.status == 'completed' %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle">Completed</span>
+              {% else %}
+                <span class="badge bg-secondary-subtle text-secondary border">Cancelled</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% if user.role in 'officer,faculty,recruiter,admin' %}
+                <a href="{% url 'drives:eligible_students' drive.pk %}" class="btn btn-outline-success btn-sm py-0 px-2" title="View & export eligible student cohort">
+                  Eligible Students
+                </a>
+              {% endif %}
+              <a href="{% url 'drives:drive_detail' drive.pk %}" class="btn btn-outline-primary btn-sm py-0 px-2 ms-1">View Details</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">
+              No placement drives scheduled yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

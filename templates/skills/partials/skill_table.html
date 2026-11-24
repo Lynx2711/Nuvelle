@@ -1,0 +1,61 @@
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light small">
+        <tr>
+          <th>Skill Name</th>
+          <th>Category</th>
+          <th>Status</th>
+          {% if can_edit %}<th class="text-end">Actions</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for skill in skills %}
+          <tr>
+            <td class="fw-semibold">{{ skill.name }}</td>
+            <td><span class="badge bg-light text-secondary border">{{ skill.category.name }}</span></td>
+            <td>
+              {% if skill.is_active %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+              {% else %}
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Inactive</span>
+              {% endif %}
+            </td>
+            {% if can_edit %}
+              <td class="text-end">
+                <a href="{% url 'skills:skill_edit' skill.pk %}" class="btn btn-outline-secondary btn-sm py-0 px-2" aria-label="Edit {{ skill.name }}">Edit</a>
+                <form action="{% url 'skills:skill_toggle_active' skill.pk %}" method="post" class="d-inline">
+                  {% csrf_token %}
+                  {% if skill.is_active %}
+                    <button type="submit" class="btn btn-outline-warning btn-sm py-0 px-2" aria-label="Deactivate {{ skill.name }}">Deactivate</button>
+                  {% else %}
+                    <button type="submit" class="btn btn-outline-success btn-sm py-0 px-2" aria-label="Activate {{ skill.name }}">Activate</button>
+                  {% endif %}
+                </form>
+              </td>
+            {% endif %}
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="{% if can_edit %}4{% else %}3{% endif %}" class="text-center py-4 text-muted">
+              No skills found matching your filter criteria.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if is_paginated %}
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2">
+      <span class="small text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      <div>
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}&q={{ query }}&category={{ selected_cat }}&status={{ selected_status }}" class="btn btn-outline-secondary btn-sm py-0">Previous</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}&q={{ query }}&category={{ selected_cat }}&status={{ selected_status }}" class="btn btn-outline-secondary btn-sm py-0 ms-1">Next</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</div>
